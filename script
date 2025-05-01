@@ -1,115 +1,134 @@
--- rost.gg-lib (GUI library)
+local Library = {}
 
-local lib = {}
-
--- CreateWindow function: Initializes a new GUI window
-function lib:CreateWindow(windowTitle)
+-- Create the main window
+function Library:CreateWindow(windowTitle)
     local window = Instance.new("ScreenGui")
     window.Name = windowTitle
     window.Parent = game.Players.LocalPlayer.PlayerGui
-    
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(0, 400, 0, 300)
-    container.Position = UDim2.new(0.5, -200, 0.5, -150)
-    container.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    container.BorderSizePixel = 0
-    container.Parent = window
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, 0, 0, 40)
-    titleLabel.Text = windowTitle
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Parent = container
-    
-    -- Return the window object and its container for adding components
-    return { Container = container, Window = window }
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 400, 0, 300)
+    frame.Position = UDim2.new(0.5, -200, 0.5, -150)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 2
+    frame.BorderColor3 = Color3.fromRGB(80, 80, 80)
+    frame.Parent = window
+
+    -- Title Bar
+    local titleBar = Instance.new("TextLabel")
+    titleBar.Size = UDim2.new(1, 0, 0, 40)
+    titleBar.Text = windowTitle
+    titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleBar.BackgroundTransparency = 1
+    titleBar.TextSize = 20
+    titleBar.Parent = frame
+
+    -- Function to allow window to be draggable
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if dragging then
+                    local delta = input.Position - dragStart
+                    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                end
+            end)
+        end
+    end)
+
+    titleBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    return { Window = window, Frame = frame }
 end
 
--- Add a Button to the GUI window
-function lib:AddButton(parent, buttonText, callback)
+-- Add a button to the window
+function Library:AddButton(parent, text, callback)
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 200, 0, 40)
-    button.Text = buttonText
-    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    button.Size = UDim2.new(0, 200, 0, 50)
+    button.Position = UDim2.new(0.5, -100, 0, 60)
+    button.Text = text
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 18
     button.BorderSizePixel = 0
     button.Parent = parent
 
+    -- Button click event
     button.MouseButton1Click:Connect(function()
         callback()
     end)
+
+    return button
 end
 
--- Add a Toggle (checkbox) to the GUI window
-function lib:AddToggle(parent, toggleText, callback)
-    local toggleFrame = Instance.new("Frame")
-    toggleFrame.Size = UDim2.new(0, 200, 0, 40)
-    toggleFrame.BackgroundTransparency = 1
-    toggleFrame.Parent = parent
+-- Add a slider to the window
+function Library:AddSlider(parent, label, minVal, maxVal, defaultVal, callback)
+    local sliderContainer = Instance.new("Frame")
+    sliderContainer.Size = UDim2.new(0, 250, 0, 50)
+    sliderContainer.Position = UDim2.new(0.5, -125, 0, 120)
+    sliderContainer.BackgroundTransparency = 1
+    sliderContainer.Parent = parent
 
-    local toggleButton = Instance.new("TextButton")
-    toggleButton.Size = UDim2.new(0, 30, 0, 30)
-    toggleButton.Text = ""
-    toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    toggleButton.BorderSizePixel = 0
-    toggleButton.Parent = toggleFrame
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 170, 0, 30)
-    label.Text = toggleText
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.BackgroundTransparency = 1
-    label.Parent = toggleFrame
-    
-    local isToggled = false
-    toggleButton.MouseButton1Click:Connect(function()
-        isToggled = not isToggled
-        toggleButton.BackgroundColor3 = isToggled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-        callback(isToggled)
-    end)
-end
+    local labelText = Instance.new("TextLabel")
+    labelText.Size = UDim2.new(0, 250, 0, 20)
+    labelText.Text = label
+    labelText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    labelText.TextSize = 16
+    labelText.BackgroundTransparency = 1
+    labelText.Parent = sliderContainer
 
--- AddSlider function to adjust values (used for FOV Circle size, etc.)
-function lib:AddSlider(parent, text, min, max, default, callback)
+    local sliderBar = Instance.new("Frame")
+    sliderBar.Size = UDim2.new(1, 0, 0, 10)
+    sliderBar.Position = UDim2.new(0, 0, 0, 25)
+    sliderBar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    sliderBar.BorderSizePixel = 0
+    sliderBar.Parent = sliderContainer
+
     local slider = Instance.new("Frame")
-    slider.Size = UDim2.new(0, 200, 0, 30)
-    slider.Position = UDim2.new(0.5, -100, 0, 50)
-    slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    slider.Size = UDim2.new(0, (defaultVal - minVal) / (maxVal - minVal), 0, 10)
+    slider.Position = UDim2.new(0, 0, 0, 0)
+    slider.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
     slider.BorderSizePixel = 0
-    slider.Parent = parent
+    slider.Parent = sliderBar
 
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Parent = slider
+    local dragging = false
 
-    local bar = Instance.new("Frame")
-    bar.Size = UDim2.new(1, 0, 0, 10)
-    bar.Position = UDim2.new(0, 0, 0, 20)
-    bar.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
-    bar.Parent = slider
-
-    local handle = Instance.new("Frame")
-    handle.Size = UDim2.new(0, 10, 1, 0)
-    handle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    handle.Parent = bar
-
-    handle.Draggable = true
-    handle.MouseButton1Down:Connect(function()
-        local function onDrag()
-            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
-            local newX = math.clamp(mousePos.X - slider.AbsolutePosition.X, 0, bar.AbsoluteSize.X)
-            handle.Position = UDim2.new(0, newX, 0, 0)
-            local value = min + ((max - min) * (newX / bar.AbsoluteSize.X))
-            callback(value)
+    sliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateSlider(input.Position.X)
         end
-
-        game:GetService("UserInputService").InputChanged:Connect(onDrag)
     end)
+
+    sliderBar.InputChanged:Connect(function(input)
+        if dragging then
+            updateSlider(input.Position.X)
+        end
+    end)
+
+    sliderBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    function updateSlider(xPos)
+        local newX = math.clamp(xPos - sliderBar.AbsolutePosition.X, 0, sliderBar.AbsoluteSize.X)
+        slider.Size = UDim2.new(0, newX, 0, 10)
+        local value = math.round(minVal + (newX / sliderBar.AbsoluteSize.X) * (maxVal - minVal))
+        callback(value)
+    end
+
+    return slider
 end
 
--- Return the library object
-return lib
+return Library
