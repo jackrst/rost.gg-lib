@@ -1,103 +1,115 @@
--- lib.lua - Your custom Roblox GUI Library
-local Library = {}
-Library.__index = Library
+-- rost.gg-lib (GUI library)
 
-local uis = game:GetService("UserInputService")
-local plr = game.Players.LocalPlayer
+local lib = {}
 
--- Neon colors
-local primaryColor = Color3.fromRGB(40, 40, 50)
-local accentColor = Color3.fromRGB(0, 255, 200)
-
--- Create draggable frame
-local function makeDraggable(frame)
-	local dragging = false
-	local dragInput, dragStart, startPos
-
-	frame.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			dragStart = input.Position
-			startPos = frame.Position
-
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then dragging = false end
-			end)
-		end
-	end)
-
-	uis.InputChanged:Connect(function(input)
-		if input == dragInput and dragging then
-			local delta = input.Position - dragStart
-			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-				startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		end
-	end)
+-- CreateWindow function: Initializes a new GUI window
+function lib:CreateWindow(windowTitle)
+    local window = Instance.new("ScreenGui")
+    window.Name = windowTitle
+    window.Parent = game.Players.LocalPlayer.PlayerGui
+    
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0, 400, 0, 300)
+    container.Position = UDim2.new(0.5, -200, 0.5, -150)
+    container.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    container.BorderSizePixel = 0
+    container.Parent = window
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0, 40)
+    titleLabel.Text = windowTitle
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Parent = container
+    
+    -- Return the window object and its container for adding components
+    return { Container = container, Window = window }
 end
 
-function Library:CreateWindow(name)
-	local gui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
-	gui.Name = name or "MyGUI"
-	gui.ResetOnSpawn = false
+-- Add a Button to the GUI window
+function lib:AddButton(parent, buttonText, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 200, 0, 40)
+    button.Text = buttonText
+    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BorderSizePixel = 0
+    button.Parent = parent
 
-	local main = Instance.new("Frame", gui)
-	main.Size = UDim2.new(0, 400, 0, 300)
-	main.Position = UDim2.new(0.3, 0, 0.3, 0)
-	main.BackgroundColor3 = primaryColor
-	main.BorderSizePixel = 0
-	main.Active = true
-	main.Draggable = true
-
-	local title = Instance.new("TextLabel", main)
-	title.Size = UDim2.new(1, 0, 0, 30)
-	title.BackgroundColor3 = accentColor
-	title.Text = name or "Window"
-	title.TextColor3 = Color3.fromRGB(0, 0, 0)
-	title.Font = Enum.Font.GothamBold
-	title.TextSize = 18
-	title.BorderSizePixel = 0
-
-	local container = Instance.new("Frame", main)
-	container.Position = UDim2.new(0, 0, 0, 30)
-	container.Size = UDim2.new(1, 0, 1, -30)
-	container.BackgroundTransparency = 1
-
-	return {
-		GUI = gui,
-		Main = main,
-		Container = container
-	}
+    button.MouseButton1Click:Connect(function()
+        callback()
+    end)
 end
 
-function Library:AddButton(container, text, callback)
-	local btn = Instance.new("TextButton", container)
-	btn.Size = UDim2.new(0, 360, 0, 30)
-	btn.Position = UDim2.new(0, 20, 0, #container:GetChildren() * 35)
-	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-	btn.Text = text
-	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	btn.Font = Enum.Font.Gotham
-	btn.TextSize = 16
-	btn.MouseButton1Click:Connect(callback or function() end)
+-- Add a Toggle (checkbox) to the GUI window
+function lib:AddToggle(parent, toggleText, callback)
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Size = UDim2.new(0, 200, 0, 40)
+    toggleFrame.BackgroundTransparency = 1
+    toggleFrame.Parent = parent
+
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0, 30, 0, 30)
+    toggleButton.Text = ""
+    toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    toggleButton.BorderSizePixel = 0
+    toggleButton.Parent = toggleFrame
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 170, 0, 30)
+    label.Text = toggleText
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.BackgroundTransparency = 1
+    label.Parent = toggleFrame
+    
+    local isToggled = false
+    toggleButton.MouseButton1Click:Connect(function()
+        isToggled = not isToggled
+        toggleButton.BackgroundColor3 = isToggled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        callback(isToggled)
+    end)
 end
 
-function Library:AddToggle(container, text, callback)
-	local state = false
+-- AddSlider function to adjust values (used for FOV Circle size, etc.)
+function lib:AddSlider(parent, text, min, max, default, callback)
+    local slider = Instance.new("Frame")
+    slider.Size = UDim2.new(0, 200, 0, 30)
+    slider.Position = UDim2.new(0.5, -100, 0, 50)
+    slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    slider.BorderSizePixel = 0
+    slider.Parent = parent
 
-	local toggle = Instance.new("TextButton", container)
-	toggle.Size = UDim2.new(0, 360, 0, 30)
-	toggle.Position = UDim2.new(0, 20, 0, #container:GetChildren() * 35)
-	toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-	toggle.Text = "[ OFF ] "..text
-	toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-	toggle.Font = Enum.Font.Gotham
-	toggle.TextSize = 16
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 20)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Parent = slider
 
-	toggle.MouseButton1Click:Connect(function()
-		state = not state
-		toggle.Text = (state and "[ ON ] " or "[ OFF ] ")..text
-		if callback then pcall(callback, state) end
-	end)
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1, 0, 0, 10)
+    bar.Position = UDim2.new(0, 0, 0, 20)
+    bar.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+    bar.Parent = slider
+
+    local handle = Instance.new("Frame")
+    handle.Size = UDim2.new(0, 10, 1, 0)
+    handle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    handle.Parent = bar
+
+    handle.Draggable = true
+    handle.MouseButton1Down:Connect(function()
+        local function onDrag()
+            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+            local newX = math.clamp(mousePos.X - slider.AbsolutePosition.X, 0, bar.AbsoluteSize.X)
+            handle.Position = UDim2.new(0, newX, 0, 0)
+            local value = min + ((max - min) * (newX / bar.AbsoluteSize.X))
+            callback(value)
+        end
+
+        game:GetService("UserInputService").InputChanged:Connect(onDrag)
+    end)
 end
 
-return Library
+-- Return the library object
+return lib
