@@ -1,2 +1,0 @@
-# rost.gg-lib
-libary
